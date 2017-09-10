@@ -76,8 +76,8 @@ namespace FM.Domain.Services
             {
                 ranking.Lost += 1;
             }
-            ranking.GoalsFor += match.HomeGoals.Value;
-            ranking.GoalsAgainst += match.AwayGoals.Value;
+            ranking.GoalsFor += match.HomeTeam == team ? match.HomeGoals.Value : match.AwayGoals.Value;
+            ranking.GoalsAgainst += match.HomeTeam == team ? match.AwayGoals.Value : match.HomeGoals.Value;
         }
     }
 }

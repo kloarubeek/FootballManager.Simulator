@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using FM.Domain.Models;
 using FM.Domain.Services;
+using FM.Domain.Models;
+using System.Linq;
 
 namespace FM.Simulator
 {
