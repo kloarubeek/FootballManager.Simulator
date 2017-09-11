@@ -31,9 +31,9 @@ namespace FM.Domain.Services
                 Name = name,
                 Teams = new List<Team>
                 {
-                    new Team { TeamId = 1, Name = "Ajax", Strength = 1000, Aggression = 10 },
+                    new Team { TeamId = 1, Name = "Ajax", Strength = 100, Aggression = 10 },
                     new Team { TeamId = 2, Name = "Feyenoord", Strength = 100, Aggression = 40 },
-                    new Team { TeamId = 3, Name = "PSV", Strength = 1, Aggression = 30 },
+                    new Team { TeamId = 3, Name = "PSV", Strength = 100, Aggression = 30 },
                     new Team { TeamId = 4, Name = "FC Utrecht", Strength = 100, Aggression = 20 }
                 }
             };

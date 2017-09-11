@@ -16,6 +16,20 @@ namespace FM.Simulator
         public static void Main(string[] args)
         {
             //setup our DI
+            var serviceProvider = SetupConfiguration();
+
+            var competitionService = serviceProvider.GetService<ICompetitionService>();
+            var matchService = serviceProvider.GetService<IMatchService>();
+            var statisticsService = serviceProvider.GetService<IStatisticsService>();
+
+            var statistics = Simulate(competitionService, matchService);
+            statisticsService.ShowHistory(statistics);
+            statisticsService.ShowStats(statistics);
+            Console.ReadLine();
+        }
+
+        private static ServiceProvider SetupConfiguration()
+        {
             var serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder.AddProvider(new CustomConsoleLoggerProvider()))
                 .AddSingleton<ICompetitionService, CompetitionService>()
@@ -28,15 +42,10 @@ namespace FM.Simulator
             //configure console logging
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             _logger = loggerFactory.CreateLogger<Program>();
-
-            var competitionService = serviceProvider.GetService<ICompetitionService>();
-            var matchService = serviceProvider.GetService<IMatchService>();
-            var statisticsService = serviceProvider.GetService<IStatisticsService>();
-
-            Work(competitionService, matchService, statisticsService);
+            return serviceProvider;
         }
 
-        private static void Work(ICompetitionService competitionService, IMatchService matchService, IStatisticsService statisticsService)
+        private static List<Competition> Simulate(ICompetitionService competitionService, IMatchService matchService)
         {
             var rankingHistory = new List<Competition>();
             bool runAgain;
@@ -66,9 +75,7 @@ namespace FM.Simulator
             } while (runAgain);
 
             Console.WriteLine($"{rankingHistory.Count} took me {stopwatch.ElapsedMilliseconds} ms.");
-            statisticsService.ShowHistory(rankingHistory);
-            statisticsService.ShowStats(rankingHistory);
-            Console.ReadLine();
+            return rankingHistory;
         }
 
         private static int GetNumberOfSimulations()
