@@ -18,4 +18,14 @@
         public int PlayerId { get; set; }
         public string Name { get; set; }
     }
+
+    public class MatchEventGoal : MatchEvent
+    {
+        public MatchEventGoal(Team team, int minute, Event @event)
+        {
+            Team = team;
+            Event = @event;
+            Minute = minute;
+        }
+    }
 }

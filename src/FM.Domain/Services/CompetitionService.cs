@@ -38,11 +38,11 @@ namespace FM.Domain.Services
                 }
             };
 
-            _logger.LogInformation("Create ranking.");
             foreach (var team in competition.Teams)
             {
                 competition.Rankings.Add(new CompetitionRanking { Team = team });
             }
+            CreateMatchSchedule(competition);
             return competition;
         }
 

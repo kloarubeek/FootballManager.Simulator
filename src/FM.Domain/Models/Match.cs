@@ -42,5 +42,11 @@ namespace FM.Domain.Models
                 return null;
             }
         }
+
+        public override string ToString()
+        {
+            var teams = string.Format("{0,-30}", $"{HomeTeam.Name} - {AwayTeam.Name}");
+            return $"{teams} {HomeGoals}-{AwayGoals}";
+        }
     }
 }
