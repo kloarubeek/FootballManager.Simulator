@@ -4,6 +4,13 @@ namespace FM.Domain.Models
 {
     public class Team : IEqualityComparer<Team>
     {
+        public Team(string name, int strength, int aggression)
+        {
+            Name = name;
+            Strength = strength;
+            Aggression = aggression;
+        }
+
         public int TeamId { get; set; }
         public string Name { get; set; }
         /// <summary>

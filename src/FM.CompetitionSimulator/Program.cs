@@ -5,47 +5,69 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using FM.Domain.Services;
 using FM.Domain.Models;
-using System.Linq;
+using Microsoft.Extensions.CommandLineUtils;
 
 namespace FM.Simulator
 {
     class Program
     {
         private static ILogger<Program> _logger;
+        private static List<int> _teamStrengths;
 
         public static void Main(string[] args)
         {
-            //setup our DI
-            var serviceProvider = SetupConfiguration();
-
-            var competitionService = serviceProvider.GetService<ICompetitionService>();
-            var matchService = serviceProvider.GetService<IMatchService>();
-            var statisticsService = serviceProvider.GetService<IStatisticsService>();
-
-            var statistics = Simulate(competitionService, matchService);
-            statisticsService.ShowHistory(statistics);
-            statisticsService.ShowStats(statistics);
-            Console.ReadLine();
+            var commandLineApplication = GetCommandLineApplication();
+            commandLineApplication.Execute(args);
         }
 
-        private static ServiceProvider SetupConfiguration()
+        /// <summary>
+        /// Handle command line arguments
+        /// </summary>
+        private static CommandLineApplication GetCommandLineApplication()
         {
+            var commandLineApplication = new CommandLineApplication(false);
+            var teamstrengthsArgument = commandLineApplication.Option(
+                "-$|-g |--teamStrengths <1,2,3,4>",
+                "a comma-separated list of strength (4 teams), i.e. 40,50,20,10. Default strength is 100.",
+                CommandOptionType.SingleValue);
+            commandLineApplication.HelpOption("-? | -h | --help");
+
+            commandLineApplication.OnExecute(() =>
+            {
+                if (teamstrengthsArgument.TryParseTeamStrength(out _teamStrengths))
+                {
+                    Run();
+                }
+                else
+                {
+                    Console.WriteLine("Teamstrengths is not a list of numeric values. Bye bye...");
+                }
+                return 0;
+            });
+            return commandLineApplication;
+        }
+
+        private static void Run()
+        {
+            //setup DI
             var serviceProvider = new ServiceCollection()
-                .AddLogging(builder => builder.AddProvider(new CustomConsoleLoggerProvider()))
-                .AddSingleton<ICompetitionService, CompetitionService>()
-                .AddSingleton<IMatchService, MatchService>()
-                .AddSingleton<IMatchSimulator, MatchSimulator>()
-                .AddSingleton<IStandingService, StandingService>()
-                .AddSingleton<IStatisticsService, StatisticsService>()
+                .ConfigureServices(_teamStrengths)
                 .BuildServiceProvider();
 
             //configure console logging
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             _logger = loggerFactory.CreateLogger<Program>();
-            return serviceProvider;
+
+            var competitionService = serviceProvider.GetService<ICompetitionService>();
+            var statistics = Simulate(competitionService);
+
+            var statisticsService = serviceProvider.GetService<IStatisticsService>();
+            ShowStats(statisticsService, statistics);
+
+            Console.ReadLine();
         }
 
-        private static List<Competition> Simulate(ICompetitionService competitionService, IMatchService matchService)
+        private static List<Competition> Simulate(ICompetitionService competitionService)
         {
             var rankingHistory = new List<Competition>();
             bool runAgain;
@@ -60,15 +82,13 @@ namespace FM.Simulator
                 {
                     _logger.LogInformation(new string('-', 80));
                     var competition = competitionService.CreateCompetition($"Eredivisie {DateTime.Now}");
-                    competition = matchService.SimulateMatches(competition);
-
-                    ShowResults(competition);
-                    ShowRanking(competition);
+                    competitionService.SimulateMatches(competition);
+                    competitionService.LogStats(competition);
                     rankingHistory.Add(competition);
                 }
                 stopwatch.Stop();
 
-                _logger.LogInformation($"It took me {stopwatch.ElapsedMilliseconds} to simulate.");
+                _logger.LogInformation($"It took me {stopwatch.ElapsedMilliseconds} ms. to simulate.");
                 Console.Write("Again? [y] [n] ");
                 runAgain = Console.ReadKey().KeyChar == 'y';
                 Console.WriteLine();
@@ -96,27 +116,10 @@ namespace FM.Simulator
             return numberofSimulations;
         }
 
-        private static void ShowRanking(Competition competition)
+        private static void ShowStats(IStatisticsService statisticsService, List<Competition> statistics)
         {
-            _logger.LogInformation(new string('_', 80));
-            _logger.LogInformation("Final ranking:");
-            _logger.LogInformation($"Pos {"Team",-15} P W D L P Goals");
-
-            foreach (var ranking in competition.Rankings.OrderBy(r => r.Position).ThenByDescending(r => r.Team.Name))
-            {
-                _logger.LogInformation($"{ranking.Position,2}. {ranking.Team.Name,-15} {ranking.Played} {ranking.Won} {ranking.Draw} {ranking.Lost} {ranking.Points} {ranking.GoalsFor,2} - {ranking.GoalsAgainst,2}");
-            }
-        }
-
-        private static void ShowResults(Competition competition)
-        {
-            _logger.LogInformation(new string('_', 80));
-            _logger.LogInformation("Results:");
-
-            foreach (var match in competition.Matches)
-            {
-                _logger.LogInformation($"{match}");
-            }
+            statisticsService.ShowHistory(statistics);
+            statisticsService.ShowStats(statistics);
         }
     }
 }

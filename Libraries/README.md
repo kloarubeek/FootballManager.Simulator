@@ -1,0 +1,1 @@
+This library is a copy of the Nuget package [WeightedRandomizer](https://github.com/BlueRaja/Weighted-Item-Randomizer-for-C-Sharp). The .Net Core package wasn't valid, so I created a [pull request](https://github.com/BlueRaja/Weighted-Item-Randomizer-for-C-Sharp/pull/2) to fix this. Unfortunately it's not merged yet, so I was not able to use the Nuget package itself.

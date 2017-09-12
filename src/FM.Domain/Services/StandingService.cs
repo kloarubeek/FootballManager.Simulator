@@ -5,6 +5,12 @@ using Microsoft.Extensions.Logging;
 
 namespace FM.Domain.Services
 {
+    public interface IStandingService
+    {
+        void UpdateStanding(Competition competition, Match match);
+        void CalculateFinalPosition(Competition competition);
+    }
+
     public class StandingService : IStandingService
     {
         private readonly ILogger _logger;

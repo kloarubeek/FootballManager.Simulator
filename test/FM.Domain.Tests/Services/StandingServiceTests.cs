@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using FM.Domain.Services;
 using FM.Domain.Models;
 
-namespace FM.Domain.Tests
+namespace FM.Domain.Tests.Services
 {
     public class StandingServiceTests
     {
@@ -22,12 +20,12 @@ namespace FM.Domain.Tests
         [Fact]
         public void UpdateStanding_SetsHomeAndAwayGoalsCorrect()
         {
-            var ajax = new Team {TeamId = 1, Name = "Ajax"};
-            var feyenoord = new Team {TeamId = 2, Name = "Feyenoord"};
+            var ajax = new Team("Ajax", 1, 1) {TeamId = 1 };
+            var feyenoord = new Team("Feyenoord", 1, 1) { TeamId = 2 };
 
             var competition = new Competition
             {
-                Teams = new List<Team> {  ajax, feyenoord }
+                Teams = new List<Team> { ajax, feyenoord }
             };
 
             foreach (var team in competition.Teams)
@@ -35,7 +33,7 @@ namespace FM.Domain.Tests
                 competition.Rankings.Add(new CompetitionRanking { Team = team });
             }
 
-            var match = new Models.Match { HomeTeam = ajax, AwayTeam = feyenoord, HomeGoals = 4, AwayGoals = 3 };
+            var match = new Domain.Models.Match { HomeTeam = ajax, AwayTeam = feyenoord, HomeGoals = 4, AwayGoals = 3 };
             _target.UpdateStanding(competition, match);
 
             var ajaxRanking = competition.Rankings.Find(x => x.Team == ajax);

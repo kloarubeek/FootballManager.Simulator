@@ -1,94 +1,68 @@
 ﻿using System;
-using System.Collections.Generic;
 using FM.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Weighted_Randomizer;
 
 namespace FM.Domain.Services
 {
+    public interface IMatchSimulator
+    {
+        Match Simulate(Match match);
+    }
+
     public class MatchSimulator : IMatchSimulator
     {
-        private static readonly List<Event> Events = new List<Event>
-        {
-            new Event("Yellow card", EventTypes.Aggression, 3),
-            new Event("Red card", EventTypes.Aggression, 1),
-            new Event("Goal", EventTypes.Strength, 2),
-            new Event("Injury", EventTypes.Strength, 1),
-            new Event("Nothing", EventTypes.Other, 93)
-        };
-        private Match _match;
         private readonly ILogger<MatchSimulator> _logger;
+        private readonly IMatchEventService _matchEventService;
         private readonly StaticWeightedRandomizer<Event> _eventsRandomizer;
 
-        public MatchSimulator(ILogger<MatchSimulator> logger)
+        public MatchSimulator(ILogger<MatchSimulator> logger, IMatchEventService matchEventService)
         {
             _logger = logger;
+            _matchEventService = matchEventService;
+            //ok, normally we shouldn't do heavy stuff in the constructor
             _eventsRandomizer = GetEvents();
         }
 
-        public void Simulate(Match match)
+        public Match Simulate(Match match)
         {
-            _match = match;
+            StartMatch(match);
 
-            StartMatch();
+            _logger.LogInformation($"Start match {match.HomeTeam} - {match.AwayTeam}");
 
-            _logger.LogInformation($"Start match {_match.HomeTeam} - {_match.AwayTeam}");
-
-            for (var minute = 1; minute < _match.Duration; minute++)
+            for (var minute = 1; minute <= match.Duration; minute++)
             {
-                SimulateMinute(minute);
+                SimulateMinute(match, minute);
             }
-            _logger.LogInformation($"Match finished {_match}");
+            _logger.LogInformation($"Match finished {match}");
+
+            return match;
         }
 
-        private void StartMatch()
+        private void StartMatch(Match match)
         {
-            _match.Duration = GetMatchLength();
-            _match.HomeGoals = 0;
-            _match.AwayGoals = 0;
+            match.Duration = GetMatchLength();
+            match.HomeGoals = 0;
+            match.AwayGoals = 0;
         }
 
-        private void SimulateMinute(int minute)
+        private void SimulateMinute(Match match, int minute)
         {
             var @event = _eventsRandomizer.NextWithReplacement();
-            var eventTeam = GetTeam(@event);
+            var eventTeam = GetTeam(match, @event);
 
             if (eventTeam == null) //no event happened, continue to next minute
             {                
                 return;
             }
-            var matchEvent = CreateMatchEvent(minute, @event, eventTeam);
-            _match.MatchEvents.Add(matchEvent);
+            var matchEvent = _matchEventService.CreateMatchEvent(minute, @event, match, eventTeam);
+            match.MatchEvents.Add(matchEvent);
         }
 
-        private MatchEvent CreateMatchEvent(int minute, Event @event, Team team)
+        private Team GetTeam(Match match, Event @event)
         {
-            var matchEvent = new MatchEvent { Event = @event, Minute = minute, Team = team };
-            if (@event.Description.Equals("Goal"))
-            {
-                if (_match.HomeTeam == team)
-                {
-                    _match.HomeGoals += 1;
-                }
-                else
-                {
-                    _match.AwayGoals += 1;
-                }
-                _logger.LogInformation($"{minute} - {@event.Description} {matchEvent.Team}! {_match.Score}");
-            }
-            else
-            {
-                //red card decrease strength??
-                _logger.LogInformation($"{minute} - {@event.Description} {matchEvent.Team}");
-            }
-
-            return matchEvent;
-        }
-
-        private Team GetTeam(Event @event)
-        {
-            var teamStrengthRandomizer = GetTeamStrengths(_match);
-            var teamAggressionRandomizer = GetTeamAggression(_match);
+            var teamStrengthRandomizer = GetTeamStrengths(match);
+            var teamAggressionRandomizer = GetTeamAggression(match);
 
             switch (@event.EventType)
             {
@@ -122,10 +96,10 @@ namespace FM.Domain.Services
             return teamStrengthRandomizer;
         }
 
-        private static StaticWeightedRandomizer<Event> GetEvents()
+        private StaticWeightedRandomizer<Event> GetEvents()
         {
             var eventRandomizer = new StaticWeightedRandomizer<Event>();
-            foreach (var @event in Events)
+            foreach (var @event in _matchEventService.GetEvents())
             {
                 eventRandomizer.Add(@event, @event.Probability);
             }

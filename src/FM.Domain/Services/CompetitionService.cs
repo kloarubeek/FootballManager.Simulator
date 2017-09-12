@@ -11,15 +11,23 @@ namespace FM.Domain.Services
     {
         Competition CreateCompetition(string name);
         List<Match> CreateMatchSchedule(Competition competition);
+        Competition SimulateMatches(Competition competition);
+        void LogStats(Competition competition);
     }
 
     public class CompetitionService : ICompetitionService
     {
         private readonly ILogger _logger;
+        private readonly ITeamService _teamsService;
+        private readonly IMatchSimulator _matchSimulator;
+        private readonly IStandingService _standingService;
 
-        public CompetitionService(ILogger<CompetitionService> logger)
+        public CompetitionService(ILogger<CompetitionService> logger, ITeamService teamsService, IMatchSimulator matchSimulator, IStandingService standingService)
         {
             _logger = logger;
+            _teamsService = teamsService;
+            _matchSimulator = matchSimulator;
+            _standingService = standingService;
         }
 
         public Competition CreateCompetition(string name)
@@ -29,13 +37,7 @@ namespace FM.Domain.Services
             var competition = new Competition
             {
                 Name = name,
-                Teams = new List<Team>
-                {
-                    new Team { TeamId = 1, Name = "Ajax", Strength = 100, Aggression = 10 },
-                    new Team { TeamId = 2, Name = "Feyenoord", Strength = 100, Aggression = 40 },
-                    new Team { TeamId = 3, Name = "PSV", Strength = 100, Aggression = 30 },
-                    new Team { TeamId = 4, Name = "FC Utrecht", Strength = 100, Aggression = 20 }
-                }
+                Teams = _teamsService.GetTeams()
             };
 
             foreach (var team in competition.Teams)
@@ -64,6 +66,47 @@ namespace FM.Domain.Services
                 }
             }
             return competition.Matches;
+        }
+
+        public Competition SimulateMatches(Competition competition)
+        {
+            _logger.LogInformation("Play matches");
+            foreach (var match in competition.Matches)
+            {
+                var playedMatch = _matchSimulator.Simulate(match);
+                _standingService.UpdateStanding(competition, playedMatch);
+            }
+            _standingService.CalculateFinalPosition(competition);
+            return competition;
+        }
+
+        public void LogStats(Competition competition)
+        {
+            ShowResults(competition);
+            ShowRanking(competition);
+        }
+
+        private void ShowRanking(Competition competition)
+        {
+            _logger.LogInformation(new string('_', 80));
+            _logger.LogInformation("Final ranking:");
+            _logger.LogInformation($"Pos {"Team",-15} P W D L P Goals");
+
+            foreach (var ranking in competition.Rankings.OrderBy(r => r.Position).ThenByDescending(r => r.Team.Name))
+            {
+                _logger.LogInformation($"{ranking.Position,2}. {ranking.Team.Name,-15} {ranking.Played} {ranking.Won} {ranking.Draw} {ranking.Lost} {ranking.Points} {ranking.GoalsFor,2} - {ranking.GoalsAgainst,2}");
+            }
+        }
+
+        private void ShowResults(Competition competition)
+        {
+            _logger.LogInformation(new string('_', 80));
+            _logger.LogInformation("Results:");
+
+            foreach (var match in competition.Matches)
+            {
+                _logger.LogInformation($"{match}");
+            }
         }
     }
 }
