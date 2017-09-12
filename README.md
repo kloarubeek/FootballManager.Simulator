@@ -64,7 +64,7 @@ The following steps are executed per simulation
   - Final competition standing is printed.
 
 ## Expectations
-If you run the simulation a 1000 times, the expectation is that each team becomes champion +/- 250 times.
+If you run the simulation a 1000 times, the expectation is that each team becomes champion +/- 250 times (in case all teams have equal strength).
 
 ## Try out other strengths
 
