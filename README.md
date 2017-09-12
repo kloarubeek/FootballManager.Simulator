@@ -45,10 +45,10 @@ The following steps are executed per simulation
   
   Event       | Probability | Based on
   ------------|-------------|---------
-  Yellow card | 3           | Team strength
-  Red card    | 1           | Team strength
-  Goal        | 2           | Strength
-  Injury      | 1           | Team strength (opponent)
+  Yellow card | 3           | Team agression
+  Red card    | 1           | Team agression
+  Goal        | 2           | Team strength
+  Injury      | 1           | Team strength (todo: move to opponent agression)
   Nothing     | 93          | -
 
   __Example:__
@@ -74,4 +74,5 @@ dotnet .\App\FM.Simulator.dll --teamStrengths 500,100,1,10
 
 This translates to Ajax (500), Feyenoord (100), PSV (1), FC Utrecht (10)
 
-
+## Sneak preview
+![screenshot](App/screenshot.png)
